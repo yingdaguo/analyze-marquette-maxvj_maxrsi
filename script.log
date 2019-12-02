@@ -1,0 +1,8 @@
+2019-11-21 13:50:37,511 INFO Script started
+2019-11-21 13:50:40,773 DEBUG Starting new HTTPS connection (1): hooks.slack.com:443
+2019-11-21 13:50:41,027 DEBUG https://hooks.slack.com:443 "POST /services/T049E9YV9/BL26QNKRA/xMTYn29slLFjfGaIUnTTQYJQ HTTP/1.1" 200 22
+2019-11-21 13:50:41,030 ERROR expected string or bytes-like object
+2019-11-21 13:50:51,929 INFO Script started
+2019-11-21 13:50:52,044 DEBUG Starting new HTTPS connection (1): hooks.slack.com:443
+2019-11-21 13:50:52,250 DEBUG https://hooks.slack.com:443 "POST /services/T049E9YV9/BL26QNKRA/xMTYn29slLFjfGaIUnTTQYJQ HTTP/1.1" 200 22
+2019-11-21 13:50:52,253 ERROR expected string or bytes-like object
