@@ -1,0 +1,67 @@
+version: 2
+jobs:
+  test-and-lint:
+    docker:
+      - image: circleci/python:3.7
+    working_directory: ~/kinduct
+    steps:
+      - checkout
+      - save_cache:
+          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/kinduct
+
+  publish:
+    docker:
+      - image: circleci/python:3.7
+    working_directory: ~/kinduct
+    steps:
+      - add_ssh_keys
+      - restore_cache:
+          key: v1-repo-{{ .Environment.CIRCLE_SHA1 }}
+      - run: sudo pip3 install awscli
+      - run: dockerd &
+      - setup-docker-engine:
+          version: 17.11.0-ce
+      - run: eval $(aws ecr get-login --region ca-central-1 --no-include-email)
+      - run:
+          name: Build and publish latest image to ECR
+          command: |
+            if [[ $CIRCLE_BRANCH == "master" ]]; then
+              IMAGE_TAG=${CIRCLE_BUILD_NUM}.${CIRCLE_WORKFLOW_ID}
+            elif [[ $CIRCLE_BRANCH == feature/* ]]; then
+              IMAGE_TAG=${CIRCLE_BRANCH/feature\//}
+            elif [[ $CIRCLE_BRANCH == release/* ]]; then
+              IMAGE_TAG=${CIRCLE_BRANCH/release\//rc-}.${CIRCLE_BUILD_NUM}.${CIRCLE_WORKFLOW_ID}
+            elif [[ $CIRCLE_BRANCH == "release" ]]; then
+              IMAGE_TAG=${CIRCLE_BRANCH/release\//rc-}.${CIRCLE_BUILD_NUM}.${CIRCLE_WORKFLOW_ID}
+            elif [[ $CIRCLE_TAG == v* ]]; then
+              IMAGE_TAG=release-${CIRCLE_TAG}.${CIRCLE_BUILD_NUM}
+            else
+              echo "Unable to compute IMAGE_TAG. This likely means your branch or tag isn't following the naming conventions." 1>&2
+              exit 1
+            fi
+            docker build -t 427771475913.dkr.ecr.ca-central-1.amazonaws.com/kinduct/$CIRCLE_PROJECT_REPONAME:$IMAGE_TAG .
+            docker push 427771475913.dkr.ecr.ca-central-1.amazonaws.com/kinduct/$CIRCLE_PROJECT_REPONAME:$IMAGE_TAG
+workflows:
+  version: 2
+  test-and-publish:
+    jobs:
+      - test-and-lint:
+          filters:
+            tags:
+              only:
+                - /.*/
+      - publish:
+          requires:
+            - test-and-lint
+          filters:
+            branches:
+              only:
+                - master
+                - /feature\/.+/
+                - /release\/.+/
+                - release
+            tags:
+              only:
+                - /^v.*/
